@@ -15,6 +15,7 @@
 #include <painlessMesh.h>
 #include <PubSubClient.h>
 #include <WiFiClient.h>
+#include "APIServerCreds.h"
 #include "APIReq.h"
 
 #define MESH_PREFIX "meshService"
@@ -145,8 +146,8 @@ void setup()
   mesh.setContainsRoot(true);
   userScheduler.addTask(taskAPIPostReq);
   taskAPIPostReq.enable();
-  httpClient.begin(&mqttClient,"http://44.195.192.158:3000/v1/jobOperations");
-  httpClient.addHeader("Content-Type: application/x-www-form-urlencoded");
+  httpClient.begin(&mqttClient,serverAddress);
+  httpClient.addHeader(header);
   
 }
 
@@ -176,9 +177,10 @@ void APIPostReq()
   for (int i = 0; i < TL.getTrackerPointer(); i++)
   {
     String v = TL.getJSON(i);
-    mqttClient.publish(topic.c_str(), v.c_str());
+  //  mqttClient.publish(topic.c_str(), v.c_str());
+    httpClient.POST(v);
   }
-  httpClient.POST("operation:cancel");
+  
   taskAPIPostReq.setInterval(TASK_SECOND * 10);
 }
 void receivedCallback(const uint32_t &from, const String &msg)
