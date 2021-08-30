@@ -99,6 +99,7 @@ High level architecture of the Mesh network
 2.  Change serverAddress to your desired API End Point.
 3.  Add API Headers to header varibale. The headers should be comma separated.
 4.  Upload the code to the Gateway Node after modifications.
+5.  Mesh nodes don't require any modifications. Just upload the mesh node code to the tracker nodes.
 
 ## ⛏️ Built Using <a name = "built_using"></a>
 

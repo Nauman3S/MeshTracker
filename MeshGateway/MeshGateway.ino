@@ -1,12 +1,4 @@
-//************************************************************
-// this is a simple example that uses the painlessMesh library to
-// connect to a another network and relay messages from a MQTT broker to the nodes of the mesh network.
-// To send a message to a mesh node, you can publish it to "painlessMesh/to/12345678" where 12345678 equals the nodeId.
-// To broadcast a message to all nodes in the mesh you can publish it to "painlessMesh/to/broadcast".
-// When you publish "getNodes" to "painlessMesh/to/gateway" you receive the mesh topology as JSON
-// Every message from the mesh which is send to the gateway node will be published to "painlessMesh/from/12345678" where 12345678
-// is the nodeId from which the packet was send.
-//************************************************************
+
 #include <Arduino.h>
 #include "SStack.h"
 #include "WiFiCreds.h"
@@ -17,6 +9,7 @@
 #include <WiFiClient.h>
 #include "APIServerCreds.h"
 #include "APIReq.h"
+#include "OLEDHandler.h"
 
 #define MESH_PREFIX "meshService"
 #define MESH_PASSWORD "somethingSneaky"
@@ -36,15 +29,15 @@ void mqttCallback(char *topic, byte *payload, unsigned int length);
 IPAddress getlocalIP();
 
 IPAddress myIP(0, 0, 0, 0);
-//44.195.192.158
-IPAddress mqttBroker(44, 195, 192, 158);
 
+IPAddress tmpSrv(0, 0, 0, 55); //temp IP
 
 Scheduler userScheduler; // to control your personal task
 painlessMesh mesh;
 WiFiClient wifiClient;
-PubSubClient mqttClient(mqttBroker, 1883, mqttCallback, wifiClient);
+PubSubClient mqttClient(tmpSrv, 1883, mqttCallback, wifiClient);
 String TrackerID = "";
+int NetworkStatus = 0;
 
 bool onFlag = false;
 
@@ -124,12 +117,16 @@ void setup()
   Serial.begin(115200);
   pinMode(LED, OUTPUT);
   setupNTP();
+  setupOLED();
+  drawProgressBarDemo();
+  setCounter(10);
   TrackerID = String(WiFi.macAddress());
   TrackerID = StringSeparator(TrackerID, ':', 0) + StringSeparator(TrackerID, ':', 1) + StringSeparator(TrackerID, ':', 2) + StringSeparator(TrackerID, ':', 3) +
               StringSeparator(TrackerID, ':', 4) + StringSeparator(TrackerID, ':', 4) + StringSeparator(TrackerID, ':', 5);
   Serial.print("GatewayTrackerID: ");
   Serial.println(TrackerID);
-
+  drawProgressBarDemo();
+  setCounter(30);
   mesh.setDebugMsgTypes(ERROR | STARTUP | CONNECTION); // set before init() so that you can see startup messages
 
   // Channel set to 6. Make sure to use the same channel for your mesh and for you other
@@ -139,16 +136,18 @@ void setup()
 
   mesh.stationManual(STATION_SSID, STATION_PASSWORD);
   mesh.setHostname(HOSTNAME);
-
-  // Bridge node, should (in most cases) be a root node. See [the wiki](https://gitlab.com/painlessMesh/painlessMesh/wikis/Possible-challenges-in-mesh-formation) for some background
   mesh.setRoot(true);
   // This node and all other nodes should ideally know the mesh contains a root, so call this on all nodes
   mesh.setContainsRoot(true);
+  drawProgressBarDemo();
+  setCounter(50);
   userScheduler.addTask(taskAPIPostReq);
   taskAPIPostReq.enable();
-  httpClient.begin(&mqttClient,serverAddress);
+  mqttClient.setServer(srvVal, 1883);
+  httpClient.begin(&mqttClient, serverAddress);
   httpClient.addHeader(header);
-  
+  drawProgressBarDemo();
+  setCounter(80);
 }
 
 void loop()
@@ -164,8 +163,9 @@ void loop()
 
     if (mqttClient.connect("painlessMeshClient"))
     {
-      mqttClient.publish("painlessMesh/from/gateway", "Ready!");
-      mqttClient.subscribe("painlessMesh/to/#");
+      NetworkStatus = 1;
+      // mqttClient.publish("BLEMesh/from/gateway", "Ready!");
+      // mqttClient.subscribe("BLEMesh/to/#");
       httpClient.listenResponse();
     }
   }
@@ -177,16 +177,24 @@ void APIPostReq()
   for (int i = 0; i < TL.getTrackerPointer(); i++)
   {
     String v = TL.getJSON(i);
-  //  mqttClient.publish(topic.c_str(), v.c_str());
+
     httpClient.POST(v);
+    if (NetworkStatus)
+    {
+      LcdPrint("Status: Connected", "Nodes:" + String(TL.getTrackerPointer()), getTimeStamp());
+    }
+    else
+    {
+      LcdPrint("Status: Wait", "Nodes:" + String(TL.getTrackerPointer()), getTimeStamp());
+    }
   }
-  
+
   taskAPIPostReq.setInterval(TASK_SECOND * 10);
 }
 void receivedCallback(const uint32_t &from, const String &msg)
 {
   Serial.printf("bridge: Received from %u msg=%s\n", from, msg.c_str());
-  String topic = "painlessMesh/from/" + String(from);
+  String topic = "BLEMesh/from/" + String(from);
   String temp = StringSeparator(msg, ' ', 2);
   String NodeMAC = StringSeparator(temp, '_', 0);
   Serial.print("HeartBeat of Node : ");
@@ -210,7 +218,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
   free(cleanPayload);
 
   String targetStr = String(topic).substring(16);
-  httpClient.updateResponse(topic,msg);
+  httpClient.updateResponse(topic, msg);
   if (targetStr == "gateway")
   {
     if (msg == "getNodes")
@@ -219,7 +227,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
       String str;
       for (auto &&id : nodes)
         str += String(id) + String(" ");
-      mqttClient.publish("painlessMesh/from/gateway", str.c_str());
+      // mqttClient.publish("BLEMesh/from/gateway", str.c_str());
     }
   }
   else if (targetStr == "broadcast")
@@ -235,7 +243,7 @@ void mqttCallback(char *topic, uint8_t *payload, unsigned int length)
     }
     else
     {
-      mqttClient.publish("painlessMesh/from/gateway", "Client not connected!");
+      // mqttClient.publish("BLEMesh/from/gateway", "Client not connected!");
     }
   }
 }

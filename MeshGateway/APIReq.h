@@ -39,7 +39,7 @@ public:
     }
     int POST(String requestData)
     {
-        String payL=serverAddressv+String("^")+headers+String("^")+requestData;
+        String payL = serverAddressv + String("^") + headers + String("^") + requestData;
         p->publish("BLEMesh/API/endpoint", payL.c_str());
     }
 
@@ -52,8 +52,8 @@ public:
     {
         if (topic == String("BLEMesh/API/response"))
         {
-            responseCode=StringSeparator(data,'^',0);
-            response=StringSeparator(data,'^',1);
+            responseCode = StringSeparator(data, '^', 0);
+            response = StringSeparator(data, '^', 1);
             Serial.println(data);
         }
     }

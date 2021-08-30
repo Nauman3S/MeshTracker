@@ -1,4 +1,4 @@
-
+const char* srvVal = "broker.hivemq.com";
 
 String randomString(String appendV);
 String StringSeparator(String data, char separator, int index);
