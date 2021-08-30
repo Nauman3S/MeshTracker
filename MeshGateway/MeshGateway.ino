@@ -146,6 +146,7 @@ void setup()
   mqttClient.setServer(srvVal, 1883);
   httpClient.begin(&mqttClient, serverAddress);
   httpClient.addHeader(header);
+  httpClient.addBasicAuth(usernameV,passwordV);
   drawProgressBarDemo();
   setCounter(80);
 }

@@ -98,8 +98,10 @@ High level architecture of the Mesh network
 1.  Open APIServerCreds.h tab
 2.  Change serverAddress to your desired API End Point.
 3.  Add API Headers to header varibale. The headers should be comma separated.
-4.  Upload the code to the Gateway Node after modifications.
-5.  Mesh nodes don't require any modifications. Just upload the mesh node code to the tracker nodes.
+4.  Updated usernameN and passwordN variables to refelct your API authentication scheme.
+5.  The HTTP POST requests are made after every 10 seconds, if you want to increase the time, open MeshGateway.ino and on   line number 46 and 193 change 10 to any number of seconds.
+6.  Upload the code to the Gateway Node after modifications.
+7.  Mesh nodes don't require any modifications. Just upload the mesh node code to the tracker nodes.
 
 ## ⛏️ Built Using <a name = "built_using"></a>
 

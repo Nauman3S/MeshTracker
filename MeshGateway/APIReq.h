@@ -6,6 +6,8 @@ private:
     String responseCode;
     String response;
     String headers = "";
+    String UserN;
+    String PassN;
     PubSubClient *p;
     String StringSeparator(String data, char separator, int index)
     {
@@ -37,9 +39,14 @@ public:
     {
         headers = h;
     }
+    void addBasicAuth(String Username, String Password){
+        UserN=Username;
+        PassN=Password;
+    }
     int POST(String requestData)
     {
-        String payL = serverAddressv + String("^") + headers + String("^") + requestData;
+        String payL = serverAddressv + String("^") + headers + String("^") + requestData+String("^")+
+        UserN+String(",")+PassN;
         p->publish("BLEMesh/API/endpoint", payL.c_str());
     }
 

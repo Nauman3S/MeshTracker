@@ -1,6 +1,7 @@
 
 import random
 import json
+import base64
 import time
 from datetime import datetime
 import paho.mqtt.client as mqtt
@@ -10,7 +11,7 @@ MASTER_KILL_SWITCH=0
 msgV=""
 topicV=""
 
-def postReq(server,header,jsonV):
+def postReq(server,header,jsonV,userPass):
     final_dictionary = json.loads(jsonV)
     print(final_dictionary)
     h=header.split(':')
@@ -22,7 +23,11 @@ def postReq(server,header,jsonV):
     data = final_dictionary
     data = json.dumps(jsonV)
     data = data.encode()
+    userPassV=userPass.split(',')
+    print(userPassV)
     try:
+        base64string = base64.b64encode((userPassV[0] + ":" + userPassV[1]).encode("ascii"))
+        request.add_header("Authorization", "Basic {}".format(base64string.decode("ascii")))
         r = request.urlopen(req, data=data)
         content = r.read()
         decodedC=content.decode()
@@ -49,7 +54,7 @@ def on_message(client, userdata, msg):
     if(topicV=='BLEMesh/API/endpoint'):
         g=msgV.split("^")
         print(g)
-        k=postReq(g[0],g[1],g[2])
+        k=postReq(g[0],g[1],g[2],g[3])
         client.publish('BLEMesh/API/response',str(k)+'^Done')
         
     
