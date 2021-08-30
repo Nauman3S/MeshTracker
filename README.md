@@ -90,7 +90,7 @@ You should have Arduino IDE Installed
 ## 🔧 Mesh Architecture <a name = "circuit"></a>
 
 High level architecture of the Mesh network
-![Circuit](des.png)
+![Circuit](Circuit/des.png)
 
 
 ## 🎈 Usage <a name="usage"></a>
